@@ -29,7 +29,7 @@ async function intervalApplication (): Promise<void> {
     if (client.enabled.includes(hour)) {
       console.log(`Running ${client.name}`)
       if (process) {
-        pm2.restart(process.pid as number, (err, proc) => {
+        pm2.restart(process.pm_id as number, (err, proc) => {
           if (err) {
             console.error(err)
           }
