@@ -24,6 +24,10 @@ async function getListProcessPM2 (): Promise<pm2.ProcessDescription[]> {
 async function intervalApplication (): Promise<void> {
   const hour = moment().tz('America/Sao_Paulo').hour()
   const listProcess = await getListProcessPM2()
+  if (!jsonClients.map(c => c.enabled).flat().includes(hour)) {
+    console.log('Nothing to do')
+    return
+  }
   for (const client of jsonClients) {
     const process = listProcess.find((p) => p.name === client.name)
     if (client.enabled.includes(hour)) {
@@ -35,6 +39,21 @@ async function intervalApplication (): Promise<void> {
           }
           console.log(proc)
         })
+        setTimeout(async () => {
+          pm2.stop(process.pm_id as number, (err, proc) => {
+            if (err) {
+              console.error(err)
+            }
+            console.log(proc)
+          })
+          await new Promise((resolve) => setTimeout(resolve, 5000))
+          pm2.restart(process.pm_id as number, (err, proc) => {
+            if (err) {
+              console.error(err)
+            }
+            console.log(proc)
+          })
+        }, 60000)
       } else {
         console.log('Process not found')
       }
