@@ -9,6 +9,8 @@ interface Client {
   enabled: number[]
 }
 
+let firstStart = true
+
 const jsonClients: Client[] = JSON.parse(readFileSync('./clients.json', 'utf-8'))
 
 async function getListProcessPM2 (): Promise<pm2.ProcessDescription[]> {
@@ -24,10 +26,11 @@ async function getListProcessPM2 (): Promise<pm2.ProcessDescription[]> {
 async function intervalApplication (): Promise<void> {
   const hour = moment().tz('America/Sao_Paulo').hour()
   const listProcess = await getListProcessPM2()
-  if (!jsonClients.map(c => c.enabled).flat().includes(hour)) {
+  if (!jsonClients.map(c => c.enabled).flat().includes(hour) && !firstStart) {
     console.log('Nothing to do')
     return
   }
+  firstStart = false
   for (const client of jsonClients) {
     const process = listProcess.find((p) => p.name === client.name)
     if (client.enabled.includes(hour)) {
@@ -39,6 +42,7 @@ async function intervalApplication (): Promise<void> {
           }
           console.log(proc)
         })
+        // Restart after 1 minute
         setTimeout(async () => {
           pm2.stop(process.pm_id as number, (err, proc) => {
             if (err) {
